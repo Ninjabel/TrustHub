@@ -36,6 +36,32 @@ export default function SignInPage() {
     }
   }
 
+  const handleQuickLogin = async (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const result = await signIn('credentials', {
+        email: demoEmail,
+        password: demoPassword,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Invalid credentials')
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
+    } catch {
+      setError('An error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
@@ -106,14 +132,89 @@ export default function SignInPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
+              <span className="px-2 bg-white text-gray-500">Konta Demo</span>
             </div>
           </div>
-          <div className="mt-4 text-xs text-gray-600 space-y-1">
-            <p><strong>Admin:</strong> admin@trusthub.demo / password123</p>
-            <p><strong>Staff:</strong> staff@trusthub.demo / password123</p>
-            <p><strong>Entity Admin:</strong> entity.admin@company.demo / password123</p>
-            <p><strong>Entity User:</strong> entity.user@company.demo / password123</p>
+          <div className="mt-4 space-y-3">
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <p className="text-xs font-semibold text-blue-900 mb-2">UKNF (Urząd Nadzoru)</p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('admin@uknf.test', 'Passw0rd!')}
+                  disabled={isLoading}
+                  className="w-full text-left px-3 py-2 bg-white border border-blue-300 rounded-md hover:bg-blue-100 transition-colors text-xs disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-blue-900">Administrator UKNF</p>
+                      <p className="text-blue-700 font-mono text-[10px]">admin@uknf.test</p>
+                    </div>
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('pracownik@uknf.test', 'Passw0rd!')}
+                  disabled={isLoading}
+                  className="w-full text-left px-3 py-2 bg-white border border-blue-300 rounded-md hover:bg-blue-100 transition-colors text-xs disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-blue-900">Pracownik UKNF</p>
+                      <p className="text-blue-700 font-mono text-[10px]">pracownik@uknf.test</p>
+                    </div>
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+            </div>
+            
+            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+              <p className="text-xs font-semibold text-green-900 mb-2">Podmioty nadzorowane</p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('admin@bank-przykladowy.test', 'Passw0rd!')}
+                  disabled={isLoading}
+                  className="w-full text-left px-3 py-2 bg-white border border-green-300 rounded-md hover:bg-green-100 transition-colors text-xs disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-green-900">Administrator Banku</p>
+                      <p className="text-green-700 font-mono text-[10px]">admin@bank-przykladowy.test</p>
+                    </div>
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('user@bank-przykladowy.test', 'Passw0rd!')}
+                  disabled={isLoading}
+                  className="w-full text-left px-3 py-2 bg-white border border-green-300 rounded-md hover:bg-green-100 transition-colors text-xs disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-green-900">Użytkownik Banku</p>
+                      <p className="text-green-700 font-mono text-[10px]">user@bank-przykladowy.test</p>
+                    </div>
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+            </div>
+            
+            <p className="text-center text-[10px] text-gray-500 mt-2">
+              💡 Kliknij na konto aby zalogować się automatycznie
+            </p>
           </div>
         </div>
       </div>

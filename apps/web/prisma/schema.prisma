@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,144 +8,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========================================
-// User & Authentication
-// ========================================
-
 enum UserRole {
-  ADMIN
-  STAFF
+  UKNF_ADMIN
+  UKNF_EMPLOYEE
   ENTITY_ADMIN
   ENTITY_USER
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  role      UserRole @default(ENTITY_USER)
-  entityId  String?
-  entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  reports              Report[]
-  messagesSent         Message[]
-  casesCreated         Case[]
-  casesAssigned        Case[]           @relation("AssignedCases")
-  announcements        Announcement[]
-  libraryFiles         LibraryFile[]
-  faqs                 FAQ[]
-  auditLogs            AuditLog[]
-  announcementReads    AnnouncementRead[]
-  faqRatings           FAQRating[]
-  
-  @@index([email])
-  @@index([entityId])
+enum OrganizationRole {
+  ADMIN
+  USER
 }
 
-// ========================================
-// Entity (Organization)
-// ========================================
-
-model Entity {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  users        User[]
-  reports      Report[]
-  cases        Case[]
-  
-  @@index([code])
+enum OrganizationStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
 }
-
-// ========================================
-// Reports Module
-// ========================================
 
 enum ReportStatus {
   DRAFT
   PROCESSING
   SUCCESS
-  ERROR
+  RULE_ERROR
+  SYSTEM_ERROR
 }
 
-model Report {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  fileName    String
-  fileUrl     String
-  fileSize    Int
-  status      ReportStatus @default(DRAFT)
-  errorMessage String?
-  
-  userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entityId    String?
-  entity      Entity?      @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  
-  processedAt DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
-  @@index([userId])
-  @@index([entityId])
-  @@index([status])
-  @@index([createdAt])
+enum ReportPeriod {
+  Q1
+  Q2
+  Q3
+  Q4
+  ANNUAL
 }
 
-// ========================================
-// Messages Module
-// ========================================
-
-model MessageThread {
-  id        String    @id @default(cuid())
-  subject   String
-  isActive  Boolean   @default(true)
-  
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
-  // Relations
-  messages  Message[]
-  
-  @@index([createdAt])
+enum ThreadStatus {
+  OPEN
+  AWAITING_RESPONSE
+  ANSWERED
+  CLOSED
 }
-
-model Message {
-  id        String   @id @default(cuid())
-  content   String
-  
-  threadId  String
-  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  attachments String[] // Array of file URLs
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([threadId])
-  @@index([userId])
-  @@index([createdAt])
-}
-
-// ========================================
-// Cases Module
-// ========================================
 
 enum CaseStatus {
   NEW
@@ -163,32 +63,220 @@ enum CasePriority {
   URGENT
 }
 
+enum BulletinPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum BulletinRecipientType {
+  ALL
+  BY_TYPE
+  BY_ENTITY
+  BY_GROUP
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(ENTITY_USER)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  memberships          OrganizationMembership[]
+  reports              Report[]
+  reportSubmissions    ReportSubmission[]
+  messageThreads       MessageThread[]
+  messagesSent         Message[]
+  casesCreated         Case[]
+  casesAssigned        Case[]           @relation("AssignedCases")
+  bulletinsCreated     Bulletin[]
+  libraryFiles         LibraryFile[]
+  faqs                 FAQ[]
+  auditLogs            AuditLog[]
+  bulletinReads        BulletinRead[]
+  faqRatings           FAQRating[]
+  financialReports     FinancialReport[]
+  ripFormData          RIPFormData[]
+  
+  @@index([email])
+  @@index([role])
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationRole
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Organization {
+  id            String              @id @default(cuid())
+  name          String
+  slug          String              @unique
+  uknfCode      String?             @unique
+  lei           String?
+  nip           String?
+  krs           String?
+  type          String?
+  category      String?
+  sector        String?
+  subsector     String?
+  street        String?
+  building      String?
+  apartment     String?
+  postalCode    String?
+  city          String?
+  status        OrganizationStatus  @default(ACTIVE)
+  isCrossBorder Boolean             @default(false)
+  
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  memberships       OrganizationMembership[]
+  reports           Report[]
+  reportSubmissions ReportSubmission[]
+  cases             Case[]
+  threads           MessageThread[]
+  financialReports  FinancialReport[]
+  ripFormData       RIPFormData[]
+  
+  @@index([slug])
+  @@index([uknfCode])
+  @@index([status])
+}
+
+model Report {
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  fileName       String
+  fileUrl        String
+  fileSize       Int
+  status         ReportStatus  @default(DRAFT)
+  errorMessage   String?
+  
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  
+  processedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ReportSubmission {
+  id               String         @id @default(cuid())
+  period           ReportPeriod
+  year             Int
+  fileName         String
+  fileUrl          String
+  fileSize         Int
+  status           ReportStatus   @default(PROCESSING)
+  validationReport String?
+  errorDetails     String?
+  
+  organizationId   String
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  submittedById    String
+  submittedBy      User           @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  
+  validatedAt      DateTime?
+  submittedAt      DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  
+  @@index([organizationId])
+  @@index([submittedById])
+  @@index([status])
+  @@index([period, year])
+}
+
+model MessageThread {
+  id             String         @id @default(cuid())
+  subject        String
+  status         ThreadStatus   @default(OPEN)
+  
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  
+  createdById    String
+  createdBy      User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  messages       Message[]
+  
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Message {
+  id          String         @id @default(cuid())
+  body        String
+  attachments String[]
+  
+  threadId    String
+  thread      MessageThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  
+  senderId    String
+  sender      User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
 model Case {
-  id          String       @id @default(cuid())
-  title       String
-  description String
-  status      CaseStatus   @default(NEW)
-  priority    CasePriority @default(MEDIUM)
+  id             String        @id @default(cuid())
+  title          String
+  description    String
+  status         CaseStatus    @default(NEW)
+  priority       CasePriority  @default(MEDIUM)
   
-  createdById String
-  createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
   
-  assignedToId String?
-  assignedTo   User?       @relation("AssignedCases", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId   String?
+  assignedTo     User?         @relation("AssignedCases", fields: [assignedToId], references: [id], onDelete: SetNull)
   
-  entityId    String?
-  entity      Entity?      @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  closedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  closedAt       DateTime?
   
-  // Relations
-  timeline    CaseTimeline[]
+  timeline       CaseTimeline[]
   
   @@index([createdById])
   @@index([assignedToId])
-  @@index([entityId])
+  @@index([organizationId])
   @@index([status])
   @@index([priority])
   @@index([createdAt])
@@ -198,99 +286,82 @@ model CaseTimeline {
   id        String   @id @default(cuid())
   caseId    String
   case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  
   event     String
   details   String?
-  
   createdAt DateTime @default(now())
   
   @@index([caseId])
   @@index([createdAt])
 }
 
-// ========================================
-// Announcements Module
-// ========================================
-
-model Announcement {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  isPublished Boolean  @default(false)
+model Bulletin {
+  id                String                @id @default(cuid())
+  title             String
+  body              String
+  priority          BulletinPriority      @default(NORMAL)
+  recipientType     BulletinRecipientType @default(ALL)
+  recipientFilter   String?
+  requireReadReceipt Boolean              @default(false)
+  attachments       String[]
   
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId          String
+  author            User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
   
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  publishedAt       DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
   
-  // Relations
-  reads       AnnouncementRead[]
+  reads             BulletinRead[]
   
   @@index([authorId])
-  @@index([isPublished])
   @@index([publishedAt])
+  @@index([priority])
 }
 
-model AnnouncementRead {
-  id             String       @id @default(cuid())
-  announcementId String
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  
+model BulletinRead {
+  id             String   @id @default(cuid())
+  bulletinId     String
+  bulletin       Bulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  readAt         DateTime @default(now())
   
-  readAt         DateTime     @default(now())
-  
-  @@unique([announcementId, userId])
+  @@unique([bulletinId, userId])
   @@index([userId])
-  @@index([announcementId])
+  @@index([bulletinId])
+  @@index([readAt])
 }
-
-// ========================================
-// Library Module
-// ========================================
 
 model LibraryFile {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  fileName    String
-  fileUrl     String
-  fileSize    Int
-  mimeType    String
-  version     String   @default("1.0")
-  
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  version      String   @default("1.0")
   uploadedById String
-  uploadedBy   User    @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   @@index([uploadedById])
   @@index([createdAt])
 }
 
-// ========================================
-// FAQ Module
-// ========================================
-
 model FAQ {
-  id        String   @id @default(cuid())
-  question  String
-  answer    String
-  category  String?
-  isPublished Boolean @default(true)
-  
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  ratings   FAQRating[]
+  id          String   @id @default(cuid())
+  question    String
+  answer      String
+  category    String?
+  isPublished Boolean  @default(true)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ratings     FAQRating[]
   
   @@index([authorId])
   @@index([category])
@@ -298,15 +369,12 @@ model FAQ {
 }
 
 model FAQRating {
-  id      String @id @default(cuid())
-  faqId   String
-  faq     FAQ    @relation(fields: [faqId], references: [id], onDelete: Cascade)
-  
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  rating  Int    // 1-5
-  
+  id        String   @id @default(cuid())
+  faqId     String
+  faq       FAQ      @relation(fields: [faqId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
   createdAt DateTime @default(now())
   
   @@unique([faqId, userId])
@@ -314,24 +382,126 @@ model FAQRating {
   @@index([userId])
 }
 
-// ========================================
-// Audit Log
-// ========================================
-
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  resource  String
+  id         String   @id @default(cuid())
+  action     String
+  resource   String
   resourceId String?
-  details   String?
-  ipAddress String?
-  
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
+  details    String?
+  ipAddress  String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
   
   @@index([userId])
   @@index([resource])
   @@index([createdAt])
+}
+
+// Financial Reporting Models - zgodne z formularzami RIP
+
+enum FinancialReportType {
+  PROFIT_LOSS_STATEMENT  // Rachunek zysków i strat
+  BALANCE_SHEET          // Bilans
+  CASH_FLOW              // Przepływy pieniężne
+  EQUITY_CHANGES         // Zmiany kapitału
+  RIP_Q1                 // RIP100000_Q1
+  RIP_Q2                 // RIP100000_Q2
+  RIP_Q3                 // RIP100000_Q3
+  RIP_Q4                 // RIP100000_Q4
+}
+
+model FinancialReport {
+  id               String               @id @default(cuid())
+  reportType       FinancialReportType
+  period           ReportPeriod
+  year             Int
+  quarter          Int?
+  variant          String?              @default("kalkulacyjny") // kalkulacyjny / porównawczy
+  
+  organizationId   String
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  submittedById    String
+  submittedBy      User                 @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  
+  status           ReportStatus         @default(DRAFT)
+  validationErrors String?
+  
+  // JSON data for flexibility
+  data             Json?
+  
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  submittedAt      DateTime?
+  validatedAt      DateTime?
+  
+  profitLossLines  ProfitLossLine[]
+  
+  @@unique([organizationId, reportType, period, year, quarter])
+  @@index([organizationId])
+  @@index([reportType])
+  @@index([period, year])
+  @@index([status])
+}
+
+// Rachunek zysków i strat (wariant kalkulacyjny)
+model ProfitLossLine {
+  id                 String          @id @default(cuid())
+  financialReportId  String
+  financialReport    FinancialReport @relation(fields: [financialReportId], references: [id], onDelete: Cascade)
+  
+  // Identyfikator pozycji (np. "A", "A.I", "B", "C", etc.)
+  lineCode           String
+  lineName           String
+  
+  // Wartość w okresie sprawozdawczym
+  value              Decimal         @default(0) @db.Decimal(18, 2)
+  
+  // Hierarchia dla zagnieżdżonych pozycji
+  parentLineCode     String?
+  level              Int             @default(0)
+  
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  
+  @@unique([financialReportId, lineCode])
+  @@index([financialReportId])
+  @@index([lineCode])
+}
+
+// Formularz RIP - szczegółowe dane
+model RIPFormData {
+  id               String          @id @default(cuid())
+  
+  // Metadane
+  taxonomy         String          // np. "SIP-1.0_2024-Q1_QR"
+  entityIdentifier String          // np. "RIP1000000"
+  startDate        DateTime
+  endDate          DateTime
+  currency         String          @default("PLN")
+  
+  // Identyfikator formularza (np. F01.00.01, F01.01.01.a, etc.)
+  formIdentifier   String
+  formDescription  String?
+  
+  organizationId   String
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  submittedById    String
+  submittedBy      User            @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  
+  // Dane formularza w formacie JSON
+  formData         Json
+  
+  status           ReportStatus    @default(DRAFT)
+  validationErrors String?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  @@unique([organizationId, formIdentifier, startDate, endDate])
+  @@index([organizationId])
+  @@index([formIdentifier])
+  @@index([startDate, endDate])
 }

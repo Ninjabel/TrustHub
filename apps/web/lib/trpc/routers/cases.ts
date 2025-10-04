@@ -42,8 +42,8 @@ export const casesRouter = createTRPCRouter({
           assignedTo: {
             select: { id: true, name: true, email: true },
           },
-          entity: {
-            select: { id: true, name: true, code: true },
+          organization: {
+            select: { id: true, name: true, slug: true },
           },
         },
       })
@@ -67,7 +67,7 @@ export const casesRouter = createTRPCRouter({
         include: {
           createdBy: { select: { id: true, name: true, email: true } },
           assignedTo: { select: { id: true, name: true, email: true } },
-          entity: { select: { id: true, name: true, code: true } },
+          organization: { select: { id: true, name: true, slug: true } },
           timeline: {
             orderBy: { createdAt: 'asc' },
           },
@@ -107,7 +107,7 @@ export const casesRouter = createTRPCRouter({
           description: input.description,
           priority: input.priority,
           createdById: session.user.id,
-          entityId: session.user.entityId,
+          organizationId: session.user.currentOrgId,
           timeline: {
             create: {
               event: 'Case created',

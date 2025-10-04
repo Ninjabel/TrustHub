@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, adminProcedure, staffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { OrganizationStatus } from '@prisma/client'
 
 export const entitiesRouter = createTRPCRouter({
   list: staffProcedure
@@ -8,19 +9,23 @@ export const entitiesRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
+        status: z.nativeEnum(OrganizationStatus).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const { limit, cursor } = input
+      const { limit, cursor, status } = input
 
-      const entities = await prisma.entity.findMany({
+      const where = status ? { status } : {}
+
+      const entities = await prisma.organization.findMany({
+        where,
         take: limit + 1,
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { name: 'asc' },
         include: {
           _count: {
-            select: { users: true, reports: true, cases: true },
+            select: { memberships: true, reports: true, cases: true },
           },
         },
       })
@@ -39,20 +44,24 @@ export const entitiesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
 
-      const entity = await prisma.entity.findUnique({
+      const entity = await prisma.organization.findUnique({
         where: { id: input.id },
         include: {
-          users: {
-            select: { id: true, name: true, email: true, role: true },
+          memberships: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, role: true },
+              },
+            },
           },
           _count: {
-            select: { reports: true, cases: true },
+            select: { reports: true, cases: true, reportSubmissions: true },
           },
         },
       })
 
       if (!entity) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Entity not found' })
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Organization not found' })
       }
 
       return entity
@@ -62,31 +71,35 @@ export const entitiesRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1),
-        code: z.string().min(1).max(20),
-        description: z.string().optional(),
-        isActive: z.boolean().default(true),
+        slug: z.string().min(1).max(100),
+        uknfCode: z.string().optional(),
+        lei: z.string().optional(),
+        nip: z.string().optional(),
+        krs: z.string().optional(),
+        type: z.string().optional(),
+        status: z.nativeEnum(OrganizationStatus).default(OrganizationStatus.ACTIVE),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
 
-      // Check if code already exists
-      const existing = await prisma.entity.findUnique({
-        where: { code: input.code },
+      // Check if slug already exists
+      const existing = await prisma.organization.findUnique({
+        where: { slug: input.slug },
       })
 
       if (existing) {
-        throw new TRPCError({ code: 'CONFLICT', message: 'Entity code already exists' })
+        throw new TRPCError({ code: 'CONFLICT', message: 'Organization slug already exists' })
       }
 
-      const entity = await prisma.entity.create({
+      const entity = await prisma.organization.create({
         data: input,
       })
 
       await prisma.auditLog.create({
         data: {
           action: 'CREATE',
-          resource: 'ENTITY',
+          resource: 'ORGANIZATION',
           resourceId: entity.id,
           userId: session.user.id,
         },
@@ -100,15 +113,15 @@ export const entitiesRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         name: z.string().min(1).optional(),
-        description: z.string().optional(),
-        isActive: z.boolean().optional(),
+        status: z.nativeEnum(OrganizationStatus).optional(),
+        uknfCode: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
       const { id, ...data } = input
 
-      const entity = await prisma.entity.update({
+      const entity = await prisma.organization.update({
         where: { id },
         data,
       })
@@ -116,7 +129,7 @@ export const entitiesRouter = createTRPCRouter({
       await prisma.auditLog.create({
         data: {
           action: 'UPDATE',
-          resource: 'ENTITY',
+          resource: 'ORGANIZATION',
           resourceId: entity.id,
           userId: session.user.id,
         },
@@ -130,26 +143,26 @@ export const entitiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
 
-      // Check if entity has users
-      const userCount = await prisma.user.count({
-        where: { entityId: input.id },
+      // Check if organization has memberships
+      const membershipCount = await prisma.organizationMembership.count({
+        where: { organizationId: input.id },
       })
 
-      if (userCount > 0) {
+      if (membershipCount > 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Cannot delete entity with associated users',
+          message: 'Cannot delete organization with associated members',
         })
       }
 
-      await prisma.entity.delete({
+      await prisma.organization.delete({
         where: { id: input.id },
       })
 
       await prisma.auditLog.create({
         data: {
           action: 'DELETE',
-          resource: 'ENTITY',
+          resource: 'ORGANIZATION',
           resourceId: input.id,
           userId: session.user.id,
         },

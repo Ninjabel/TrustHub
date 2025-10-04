@@ -46,17 +46,17 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   })
 })
 
-// Admin-only procedure
+// Admin-only procedure (UKNF_ADMIN)
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.session.user.role !== UserRole.ADMIN) {
+  if (ctx.session.user.role !== UserRole.UKNF_ADMIN) {
     throw new TRPCError({ code: 'FORBIDDEN' })
   }
   return next({ ctx })
 })
 
-// Staff procedure (ADMIN + STAFF)
+// Staff procedure (UKNF_ADMIN + UKNF_EMPLOYEE)
 export const staffProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const allowedRoles: UserRole[] = [UserRole.ADMIN, UserRole.STAFF]
+  const allowedRoles: UserRole[] = [UserRole.UKNF_ADMIN, UserRole.UKNF_EMPLOYEE]
   if (!allowedRoles.includes(ctx.session.user.role as UserRole)) {
     throw new TRPCError({ code: 'FORBIDDEN' })
   }

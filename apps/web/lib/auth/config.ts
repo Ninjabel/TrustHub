@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import type { OrganizationMembership } from './types'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,7 +19,19 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: { entity: true },
+          include: { 
+            memberships: {
+              include: {
+                organization: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  }
+                }
+              }
+            }
+          },
         })
 
         if (!user) {
@@ -34,12 +47,20 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials')
         }
 
+        const memberships: OrganizationMembership[] = user.memberships.map(m => ({
+          orgId: m.organizationId,
+          role: m.role,
+          orgName: m.organization.name,
+          orgSlug: m.organization.slug,
+        }))
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-          entityId: user.entityId,
+          memberships,
+          currentOrgId: memberships[0]?.orgId || null,
         }
       },
     }),
@@ -49,7 +70,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
-        token.entityId = user.entityId
+        token.memberships = user.memberships || []
+        token.currentOrgId = user.currentOrgId || null
       }
       return token
     },
@@ -57,7 +79,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id
         session.user.role = token.role
-        session.user.entityId = token.entityId
+        session.user.memberships = token.memberships
+        session.user.currentOrgId = token.currentOrgId
       }
       return session
     },

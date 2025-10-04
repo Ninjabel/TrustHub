@@ -3,6 +3,7 @@ import { reportsRouter } from './routers/reports'
 import { messagesRouter } from './routers/messages'
 import { casesRouter } from './routers/cases'
 import { announcementsRouter } from './routers/announcements'
+import { bulletinsRouter } from './routers/bulletins'
 import { libraryRouter } from './routers/library'
 import { faqRouter } from './routers/faq'
 import { entitiesRouter } from './routers/entities'
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   messages: messagesRouter,
   cases: casesRouter,
   announcements: announcementsRouter,
+  bulletins: bulletinsRouter,
   library: libraryRouter,
   faq: faqRouter,
   entities: entitiesRouter,

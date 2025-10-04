@@ -1,0 +1,35 @@
+export default function EntitiesPage() {
+  return (
+    <div className="space-y-6">
+      <div className="sm:flex sm:items-center">
+        <div className="sm:flex-auto">
+          <h1 className="text-2xl font-semibold text-gray-900">Entities</h1>
+          <p className="mt-2 text-sm text-gray-700">
+            Manage organizations and entities
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+          >
+            Add Entity
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="px-4 py-5 sm:px-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">
+            All Entities
+          </h3>
+        </div>
+        <div className="border-t border-gray-200">
+          <div className="bg-gray-50 px-4 py-3 text-sm text-gray-500">
+            Entity list with CRUD operations will be displayed here
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

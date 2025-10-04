@@ -1,0 +1,337 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// User & Authentication
+// ========================================
+
+enum UserRole {
+  ADMIN
+  STAFF
+  ENTITY_ADMIN
+  ENTITY_USER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(ENTITY_USER)
+  entityId  String?
+  entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  reports              Report[]
+  messagesSent         Message[]
+  casesCreated         Case[]
+  casesAssigned        Case[]           @relation("AssignedCases")
+  announcements        Announcement[]
+  libraryFiles         LibraryFile[]
+  faqs                 FAQ[]
+  auditLogs            AuditLog[]
+  announcementReads    AnnouncementRead[]
+  faqRatings           FAQRating[]
+  
+  @@index([email])
+  @@index([entityId])
+}
+
+// ========================================
+// Entity (Organization)
+// ========================================
+
+model Entity {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  users        User[]
+  reports      Report[]
+  cases        Case[]
+  
+  @@index([code])
+}
+
+// ========================================
+// Reports Module
+// ========================================
+
+enum ReportStatus {
+  DRAFT
+  PROCESSING
+  SUCCESS
+  ERROR
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  status      ReportStatus @default(DRAFT)
+  errorMessage String?
+  
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId    String?
+  entity      Entity?      @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  @@index([userId])
+  @@index([entityId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ========================================
+// Messages Module
+// ========================================
+
+model MessageThread {
+  id        String    @id @default(cuid())
+  subject   String
+  isActive  Boolean   @default(true)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  messages  Message[]
+  
+  @@index([createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  
+  threadId  String
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  attachments String[] // Array of file URLs
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ========================================
+// Cases Module
+// ========================================
+
+enum CaseStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Case {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  status      CaseStatus   @default(NEW)
+  priority    CasePriority @default(MEDIUM)
+  
+  createdById String
+  createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  assignedToId String?
+  assignedTo   User?       @relation("AssignedCases", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  entityId    String?
+  entity      Entity?      @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  closedAt    DateTime?
+  
+  // Relations
+  timeline    CaseTimeline[]
+  
+  @@index([createdById])
+  @@index([assignedToId])
+  @@index([entityId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model CaseTimeline {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  event     String
+  details   String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([caseId])
+  @@index([createdAt])
+}
+
+// ========================================
+// Announcements Module
+// ========================================
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  isPublished Boolean  @default(false)
+  
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  reads       AnnouncementRead[]
+  
+  @@index([authorId])
+  @@index([isPublished])
+  @@index([publishedAt])
+}
+
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  readAt         DateTime     @default(now())
+  
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@index([announcementId])
+}
+
+// ========================================
+// Library Module
+// ========================================
+
+model LibraryFile {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  mimeType    String
+  version     String   @default("1.0")
+  
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([uploadedById])
+  @@index([createdAt])
+}
+
+// ========================================
+// FAQ Module
+// ========================================
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String?
+  isPublished Boolean @default(true)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  ratings   FAQRating[]
+  
+  @@index([authorId])
+  @@index([category])
+  @@index([isPublished])
+}
+
+model FAQRating {
+  id      String @id @default(cuid())
+  faqId   String
+  faq     FAQ    @relation(fields: [faqId], references: [id], onDelete: Cascade)
+  
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  rating  Int    // 1-5
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([faqId, userId])
+  @@index([faqId])
+  @@index([userId])
+}
+
+// ========================================
+// Audit Log
+// ========================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  resource  String
+  resourceId String?
+  details   String?
+  ipAddress String?
+  
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+}

@@ -6,9 +6,6 @@ import {
   ChevronRight, 
   ChevronsLeft, 
   ChevronsRight,
-  Search,
-  X,
-  Download
 } from 'lucide-react'
 
 export interface Column<T> {
@@ -29,27 +26,24 @@ export interface DataTableProps<T> {
   onExport?: (format: 'csv' | 'xlsx' | 'json') => void
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T>({
   data,
   columns,
   searchPlaceholder = 'Szukaj...',
   onRowClick,
   itemsPerPageOptions = [10, 25, 50, 100],
-  filters,
-  actions,
-  onExport,
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0])
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [showFilters, setShowFilters] = useState(false)
 
   // Filter data based on search
   const filteredData = data.filter((item) => {
     if (!searchQuery) return true
-    return Object.values(item).some((value) =>
+    const record = item as unknown as Record<string, unknown>
+    return Object.values(record).some((value) =>
       String(value).toLowerCase().includes(searchQuery.toLowerCase())
     )
   })
@@ -58,8 +52,8 @@ export function DataTable<T extends Record<string, any>>({
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0
     
-    const aVal = a[sortColumn]
-    const bVal = b[sortColumn]
+  const aVal = (a as unknown as Record<string, unknown>)[sortColumn] as string | number
+  const bVal = (b as unknown as Record<string, unknown>)[sortColumn] as string | number
     
     if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
     if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
@@ -78,13 +72,6 @@ export function DataTable<T extends Record<string, any>>({
       setSortColumn(columnKey)
       setSortDirection('asc')
     }
-  }
-
-  const handleReset = () => {
-    setSearchQuery('')
-    setSortColumn(null)
-    setSortDirection('asc')
-    setCurrentPage(1)
   }
 
   return (
@@ -154,7 +141,7 @@ export function DataTable<T extends Record<string, any>>({
                   >
                     {columns.map((column) => (
                       <td key={column.key} className="px-4 py-2.5 text-sm text-gray-900">
-                        {column.render ? column.render(item) : item[column.key]}
+                        {column.render ? column.render(item) : String((item as unknown as Record<string, unknown>)[column.key] ?? '')}
                       </td>
                     ))}
                   </tr>

@@ -1,59 +1,50 @@
-'use client'
+"use client"
 
 import { signOut } from 'next-auth/react'
 import { Session } from 'next-auth'
-import { OrganizationSwitcher } from './organization-switcher'
 import { UserRole } from '@prisma/client'
-import { Eye, Menu } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 type UserFromSession = Session['user'] & {
   id?: string
   role?: UserRole
-  memberships?: any[]
+  memberships?: Array<{ orgId: string; role: string }>
   currentOrgId?: string | null
 }
 
 export function Header({ user }: { user: UserFromSession | null }) {
-  const isEntityUser = user?.role === 'ENTITY_ADMIN' || user?.role === 'ENTITY_USER'
-  const isUKNF = user?.role === 'UKNF_ADMIN' || user?.role === 'UKNF_EMPLOYEE'
-  
-  const [mounted, setMounted] = useState(false)
   const [fontSize, setFontSize] = useState(1) // 0: small, 1: medium, 2: large
-  const [highContrast, setHighContrast] = useState(false)
-  const [sessionTime, setSessionTime] = useState('12:46')
-
-  // Ensure component is mounted before running client-side effects
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Session timer countdown
-  useEffect(() => {
-    if (!mounted) return
-    
-    const timer = setInterval(() => {
-      const now = new Date()
-      const end = new Date(now.getTime() + 12 * 60 * 1000 + 46 * 1000)
-      const mins = Math.floor((end.getTime() - now.getTime()) / 60000)
-      const secs = Math.floor(((end.getTime() - now.getTime()) % 60000) / 1000)
-      setSessionTime(`${mins}:${secs.toString().padStart(2, '0')}`)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [mounted])
 
   const roleLabels = {
     UKNF_ADMIN: 'Administrator UKNF',
     UKNF_EMPLOYEE: 'Pracownik UKNF',
     ENTITY_ADMIN: 'Administrator podmiotu',
-    ENTITY_USER: 'Użytkownik podmiotu',
+    ENTITY_USER: 'Pracownik podmiotu',
   }
 
   const handleFontSize = () => {
     const newSize = (fontSize + 1) % 3
     setFontSize(newSize)
-    const sizes = ['text-sm', 'text-base', 'text-lg']
     document.documentElement.style.fontSize = newSize === 0 ? '14px' : newSize === 1 ? '16px' : '18px'
+  }
+
+  const handleSignOut = () => {
+    try {
+      console.log('[Header] handleSignOut called')
+      toast('Wylogowywanie...', { icon: '🔒' })
+      // Remove any persisted tab storage so tabs don't reappear after next login
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.removeItem('trusthub-tabs-storage')
+        }
+      } catch (e) {
+        console.warn('Failed to remove persisted tabs from localStorage', e)
+      }
+    } finally {
+      // Finally, call signOut to end the session and redirect
+      signOut({ callbackUrl: '/signin' })
+    }
   }
 
   return (
@@ -93,39 +84,19 @@ export function Header({ user }: { user: UserFromSession | null }) {
                 <span className={fontSize === 2 ? 'font-bold text-xl' : 'text-xl'}>A</span>
               </button>
 
-              {/* High contrast */}
-              <button
-                onClick={() => setHighContrast(!highContrast)}
-                className={`p-2 rounded ${highContrast ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                title="Wysoki kontrast"
-              >
-                <Eye className="h-5 w-5" />
-              </button>
-
-              {/* Session timer */}
-              {isEntityUser && (
-                <div className="flex items-center gap-2 text-sm text-gray-700 border-l pl-3">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Koniec sesji za: <strong>{sessionTime}</strong></span>
-                </div>
-              )}
-
               {/* User info */}
               <div className="flex items-center gap-3 border-l pl-3">
                 <div className="text-right hidden sm:block">
                   <div className="text-sm font-medium text-gray-900">{user?.name}</div>
                   <div className="text-xs text-gray-500">
-                    {isUKNF ? 'Użytkownik UKNF' : 'Użytkownik podmiotu'}
+                    {user?.role ? roleLabels[user.role as keyof typeof roleLabels] : 'Użytkownik'}
                   </div>
                 </div>
-                {isEntityUser && <OrganizationSwitcher />}
               </div>
 
               {/* Logout */}
               <button
-                onClick={() => signOut({ callbackUrl: '/signin' })}
+                onClick={handleSignOut}
                 className="px-3 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded"
               >
                 Wyloguj

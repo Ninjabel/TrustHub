@@ -1,67 +1,65 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { 
   LayoutDashboard, 
   FileText, 
   MessageSquare, 
-  Folder, 
   Megaphone,
   BookOpen, 
   HelpCircle, 
+  Calendar,
   Building2, 
   Settings,
   ClipboardList,
-  ChevronRight
+  ChevronRight,
+  Users,
+  BarChart3,
+  FolderOpen,
+  Briefcase
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTabNavigation } from '@/lib/tabs/use-tab-navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { getAccessiblePaths } from '@/lib/tabs/tab-access-map'
+import { UserRole } from '@prisma/client'
 
 const iconMap = {
   home: LayoutDashboard,
   document: FileText,
   chat: MessageSquare,
-  briefcase: Folder,
+  briefcase: Briefcase,
+  calendar: Calendar,
   megaphone: Megaphone,
   book: BookOpen,
   question: HelpCircle,
   building: Building2,
   cog: Settings,
   bulletins: ClipboardList,
+  users: Users,
+  reports: BarChart3,
+  library: FolderOpen,
 }
-
-const uknfNavigation = [
-  { name: 'Moje podmioty', href: '/dashboard/entities', icon: 'building' },
-  { name: 'Wnioski o dostęp', href: '/dashboard/access-requests', icon: 'document' },
-  { name: 'Biblioteka - repozytorium plików', href: '/dashboard/library', icon: 'book' },
-  { name: 'Wiadomości', href: '/dashboard/messages', icon: 'chat' },
-  { name: 'Sprawy', href: '/dashboard/cases', icon: 'briefcase' },
-  { name: 'Linia uprawnień', href: '/dashboard/permissions', icon: 'cog' },
-  { name: 'Wysyłka dokumentów', href: '/dashboard/documents', icon: 'megaphone' },
-  { name: 'Sprawozdawczość', href: '/dashboard/reports', icon: 'document' },
-  { name: 'Moje pytania', href: '/dashboard/faq', icon: 'question' },
-  { name: 'Baza wiedzy', href: '/dashboard/knowledge', icon: 'book' },
-]
-
-const entityNavigation = [
-  { name: 'Biblioteka - repozytorium plików', href: '/dashboard/library', icon: 'book' },
-  { name: 'Wnioski o dostęp', href: '/dashboard/access-requests', icon: 'document' },
-  { name: 'Sprawy', href: '/dashboard/cases', icon: 'briefcase' },
-  { name: 'Sprawozdawczość', href: '/dashboard/reports', icon: 'document' },
-  { name: 'Moje pytania', href: '/dashboard/faq', icon: 'question' },
-  { name: 'Baza wiedzy', href: '/dashboard/knowledge', icon: 'book' },
-]
 
 export function Sidebar({ userRole }: { userRole?: string }) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { navigateTo } = useTabNavigation()
+  const router = useRouter()
   
   // Use userRole prop if available, otherwise fall back to session
-  const effectiveRole = userRole || session?.user?.role
-  const isUKNF = effectiveRole === 'UKNF_ADMIN' || effectiveRole === 'UKNF_EMPLOYEE'
-  const navigation = isUKNF ? uknfNavigation : entityNavigation
+  const effectiveRole = (userRole || session?.user?.role) as UserRole | undefined
+  
+  // Get accessible navigation items based on user role
+  const accessiblePaths = effectiveRole ? getAccessiblePaths(effectiveRole) : []
+  
+  // Map accessible paths to navigation items
+  const navigation = accessiblePaths.map(config => ({
+    name: config.title,
+    href: config.path,
+    icon: config.icon || 'home',
+  }))
 
   return (
     <>
@@ -102,34 +100,35 @@ export function Sidebar({ userRole }: { userRole?: string }) {
               const Icon = iconMap[item.icon as keyof typeof iconMap]
               
               return (
-                <Link
+                <button
                   key={item.name}
-                  href={item.href}
-                  className={`
-                    flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-                    ${
-                      isActive
-                        ? 'bg-white text-gray-900 font-medium border-l-4 border-blue-600'
-                        : 'text-gray-700 hover:bg-white border-l-4 border-transparent'
+                  onClick={() => {
+                    // Prefer the simplified navigateTo which performs access checks
+                    const ok = navigateTo(item.href)
+                    if (!ok) return
+                    // If navigateTo succeeded, router will navigate. If it returned true but didn't push, ensure push.
+                    try {
+                      router.push(item.href)
+                    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
+                      // noop
                     }
+                  }}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors relative
                   `}
                 >
                   {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
-                  <span className="flex-1">{item.name}</span>
-                </Link>
+                  <span className="flex-1 text-left">{item.name}</span>
+
+                  {/* Underline / active indicator on the left */}
+                  {isActive && (
+                    <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-600" />
+                  )}
+                </button>
               )
             })}
           </nav>
           
-          {/* Footer */}
-          <div className="flex-shrink-0 px-4 py-3 bg-gray-800 text-white">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="w-full text-left text-xs py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded"
-            >
-              Zwiń menu
-            </button>
-          </div>
         </div>
       </div>
 

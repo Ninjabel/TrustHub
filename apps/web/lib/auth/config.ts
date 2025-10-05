@@ -38,6 +38,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials')
         }
 
+        // Block system accounts from interactive login
+        if (user.isSystemAccount) {
+          throw new Error('System accounts cannot log in interactively')
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
@@ -59,6 +64,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          isSystemAccount: user.isSystemAccount,
           memberships,
           currentOrgId: memberships[0]?.orgId || null,
         }
@@ -70,6 +76,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.isSystemAccount = user.isSystemAccount
         token.memberships = user.memberships || []
         token.currentOrgId = user.currentOrgId || null
       }
@@ -79,6 +86,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id
         session.user.role = token.role
+        session.user.isSystemAccount = token.isSystemAccount
         session.user.memberships = token.memberships
         session.user.currentOrgId = token.currentOrgId
       }

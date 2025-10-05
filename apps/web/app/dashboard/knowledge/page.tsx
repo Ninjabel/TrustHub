@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
+// SystemBreadcrumb removed; page uses heading instead
 import { Search, BookOpen, FileText, Video, HelpCircle, ChevronRight } from 'lucide-react'
 
 interface KnowledgeCategory {
@@ -76,19 +76,9 @@ export default function KnowledgePage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="UKNF" 
-        module="Baza wiedzy" 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Baza wiedzy', closeable: true },
-        ]}
-      />
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
+      {/* Breadcrumbs removed - TabNavigation in layout is used for tabs */}
 
       <div className="flex-1 px-6 py-6">
         {/* Search */}

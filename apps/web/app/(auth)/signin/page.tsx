@@ -1,11 +1,10 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
+import { toast } from 'sonner'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,19 +15,18 @@ export default function SignInPage() {
     setError('')
     setIsLoading(true)
 
+    console.log('[SignIn] handleSubmit called', { email })
+
     try {
-      const result = await signIn('credentials', {
+      console.log('[SignIn] calling signIn (redirect)')
+      toast('Logowanie...', { icon: '🔐' })
+      // Use redirect flow to avoid depending on returned result shape
+      await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/dashboard',
       })
-
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else {
-        router.push('/dashboard')
-        router.refresh()
-      }
     } catch {
       setError('An error occurred. Please try again.')
     } finally {
@@ -42,19 +40,17 @@ export default function SignInPage() {
     setError('')
     setIsLoading(true)
 
+    console.log('[SignIn] handleQuickLogin called', { demoEmail })
+
     try {
-      const result = await signIn('credentials', {
+      console.log('[SignIn] calling signIn quick (redirect)')
+      toast('Logowanie demo...', { icon: '🔐' })
+      await signIn('credentials', {
         email: demoEmail,
         password: demoPassword,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/dashboard',
       })
-
-      if (result?.error) {
-        setError('Invalid credentials')
-      } else {
-        router.push('/dashboard')
-        router.refresh()
-      }
     } catch {
       setError('An error occurred. Please try again.')
     } finally {
@@ -185,7 +181,7 @@ export default function SignInPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-green-900">Administrator Banku</p>
+                      <p className="font-semibold text-green-900">Administrator podmiotu</p>
                       <p className="text-green-700 font-mono text-[10px]">admin@bank-przykladowy.test</p>
                     </div>
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +197,7 @@ export default function SignInPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-green-900">Użytkownik Banku</p>
+                      <p className="font-semibold text-green-900">Pracownik podmiotu</p>
                       <p className="text-green-700 font-mono text-[10px]">user@bank-przykladowy.test</p>
                     </div>
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

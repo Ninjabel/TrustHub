@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, adminProcedure, staffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
-import { OrganizationStatus } from '@prisma/client'
+import { OrganizationStatus, Prisma } from '@prisma/client'
 
 export const entitiesRouter = createTRPCRouter({
   list: staffProcedure
@@ -121,21 +121,37 @@ export const entitiesRouter = createTRPCRouter({
       const { session, prisma } = ctx
       const { id, ...data } = input
 
-      const entity = await prisma.organization.update({
-        where: { id },
-        data,
-      })
+      try {
+        const entity = await prisma.organization.update({
+          where: { id },
+          data,
+        })
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'UPDATE',
-          resource: 'ORGANIZATION',
-          resourceId: entity.id,
-          userId: session.user.id,
-        },
-      })
+        await prisma.auditLog.create({
+          data: {
+            action: 'UPDATE',
+            resource: 'ORGANIZATION',
+            resourceId: entity.id,
+            userId: session.user.id,
+          },
+        })
 
-      return entity
+        return entity
+      } catch (err) {
+        // Map Prisma unique constraint error to TRPC conflict error
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          // Determine which target caused the conflict if available
+          const target = (err.meta as { target?: string[] })?.target || []
+          const field = Array.isArray(target) && target.length ? target.join(', ') : 'field'
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `Unique constraint failed on ${field}`,
+          })
+        }
+
+        // Re-throw as internal error for other cases
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update organization' })
+      }
     }),
 
   delete: adminProcedure

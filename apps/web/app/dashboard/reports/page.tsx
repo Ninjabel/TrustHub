@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable, type Column } from '@/components/data-table'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
+// SystemBreadcrumb removed; page uses heading instead
 import { Upload, FileSpreadsheet, Download, CheckCircle, XCircle, Clock } from 'lucide-react'
 
 interface FinancialReport {
@@ -117,19 +117,8 @@ export default function ReportsPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="Podmiot" 
-        module="Bank Przykładowy S.A." 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Sprawozdawczość', closeable: true },
-        ]}
-      />
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
 
       <div className="flex-1 px-6 py-6">
         {/* Stats */}

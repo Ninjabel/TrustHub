@@ -60,14 +60,29 @@ After seeding, you can login with:
 ## 📦 Features
 
 ### Core Modules
-- **Reports**: Upload XLSX files, validation, status tracking, export
+- **Regulatory Reporting**: 📊 Complete reporting module with XLSX upload, validation, corrections, status tracking, calendar, and export (XLSX/CSV/JSON)
+- **Reports** (Legacy): Upload XLSX files, validation, status tracking, export
 - **Messages**: Threaded conversations with attachments
 - **Cases**: Workflow management with timeline
-- **Announcements**: Publish and read tracking
+- **Bulletins/Announcements**: Publish and read tracking
 - **Library**: Document management with versioning
 - **FAQ**: Q&A with ratings and search
 - **Entities**: CRUD for entity records
 - **Admin**: User and role management (RBAC)
+- **Access Requests**: User access request workflow
+
+### Regulatory Reporting Module (NEW! 📊)
+- Upload regulatory reports (XLSX files)
+- Automated validation with detailed reports
+- Status tracking (8 statuses: DRAFT → SUBMITTED → IN_PROGRESS → SUCCESS/ERROR)
+- Report corrections with version history
+- Reporting calendar with compliance tracking
+- Communication threads per report
+- Full audit trail
+- Export to XLSX/CSV/JSON
+- Role-based access (ENTITY_USER, ENTITY_ADMIN, UKNF_EMPLOYEE, UKNF_ADMIN)
+- Documentation: [REGULATORY_REPORTING_MODULE.md](./REGULATORY_REPORTING_MODULE.md)
+- Quickstart: [QUICKSTART_REGULATORY_REPORTING.md](./QUICKSTART_REGULATORY_REPORTING.md)
 
 ### Security
 - CSRF token protection

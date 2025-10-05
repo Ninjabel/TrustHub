@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
-import { BulletinPriority, BulletinRecipientType } from '@prisma/client'
+import { BulletinPriority, BulletinRecipientType, Prisma } from '@prisma/client'
 import { isUKNF, hasPermission } from '@/lib/rbac/permissions'
 
 export const bulletinsRouter = createTRPCRouter({
@@ -14,7 +14,7 @@ export const bulletinsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const where: any = {
+      const where: Prisma.BulletinWhereInput = {
         publishedAt: { not: null },
       }
 

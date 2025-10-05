@@ -15,7 +15,7 @@ export const messagesRouter = createTRPCRouter({
       const { limit, cursor } = input
 
       const threads = await prisma.messageThread.findMany({
-        where: { isActive: true },
+        where: { status: { not: 'CLOSED' } },
         take: limit + 1,
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { updatedAt: 'desc' },
@@ -24,7 +24,7 @@ export const messagesRouter = createTRPCRouter({
             take: 1,
             orderBy: { createdAt: 'desc' },
             include: {
-              user: {
+              sender: {
                 select: { id: true, name: true, email: true },
               },
             },
@@ -58,7 +58,7 @@ export const messagesRouter = createTRPCRouter({
           messages: {
             orderBy: { createdAt: 'asc' },
             include: {
-              user: {
+              sender: {
                 select: { id: true, name: true, email: true, role: true },
               },
             },
@@ -87,10 +87,11 @@ export const messagesRouter = createTRPCRouter({
       const thread = await prisma.messageThread.create({
         data: {
           subject: input.subject,
+          createdById: session.user.id,
           messages: {
             create: {
-              content: input.content,
-              userId: session.user.id,
+              body: input.content,
+              senderId: session.user.id,
               attachments: input.attachments,
             },
           },
@@ -131,19 +132,19 @@ export const messagesRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Thread not found' })
       }
 
-      if (!thread.isActive) {
+      if (thread.status === 'CLOSED') {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Thread is closed' })
       }
 
       const message = await prisma.message.create({
         data: {
-          content: input.content,
+          body: input.content,
           threadId: input.threadId,
-          userId: session.user.id,
+          senderId: session.user.id,
           attachments: input.attachments,
         },
         include: {
-          user: {
+          sender: {
             select: { id: true, name: true, email: true },
           },
         },
@@ -165,7 +166,7 @@ export const messagesRouter = createTRPCRouter({
 
       const thread = await prisma.messageThread.update({
         where: { id: input.id },
-        data: { isActive: false },
+        data: { status: 'CLOSED' },
       })
 
       await prisma.auditLog.create({

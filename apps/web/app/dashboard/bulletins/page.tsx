@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable, type Column } from '@/components/data-table'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
+// SystemBreadcrumb removed; page uses heading instead
 import { trpc } from '@/lib/trpc/client'
 import { format } from 'date-fns'
 import { pl } from 'date-fns/locale'
@@ -21,7 +21,7 @@ interface Bulletin {
 }
 
 export default function BulletinsPage() {
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+  const [showUnreadOnly] = useState(false)
   
   const { data, isLoading } = trpc.bulletins.list.useQuery({
     unreadOnly: showUnreadOnly,
@@ -72,21 +72,8 @@ export default function BulletinsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="Podmiot" 
-        module="Instytucja Testowa" 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Wnioski o dostęp', href: '/dashboard/access-requests', closeable: true },
-          { label: 'Biblioteka - repozytorium plików', closeable: true },
-        ]}
-      />
-
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
       <div className="flex-1 px-6 py-6">
         <div className="bg-white rounded border border-gray-300">
           <div className="px-6 py-4 border-b border-gray-300">

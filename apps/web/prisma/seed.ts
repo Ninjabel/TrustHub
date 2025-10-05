@@ -13,6 +13,7 @@
   FinancialReportType
 } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -41,6 +42,25 @@ async function main() {
   const password = await bcrypt.hash('Passw0rd!', 10)
   
   // ============================================
+  // UKNF INSTITUTIONAL ACCOUNT (SYSTEM)
+  // ============================================
+  console.log('🏛️  Tworzenie konta instytucjonalnego UKNF...')
+  
+  const uknfInstitution = await prisma.user.upsert({
+    where: { email: 'system@uknf.gov.pl' },
+    update: {},
+    create: {
+      email: 'system@uknf.gov.pl',
+      name: 'UKNF',
+      password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10), // Random unguessable password
+      role: UserRole.UKNF_INSTITUTION,
+      isSystemAccount: true,
+    },
+  })
+  
+  console.log(`✅ Utworzono konto instytucjonalne: ${uknfInstitution.email}`)
+  
+  // ============================================
   // UKNF USERS
   // ============================================
   console.log('👥 Tworzenie użytkowników UKNF...')
@@ -48,7 +68,7 @@ async function main() {
   const adminUKNF = await prisma.user.create({
     data: { 
       email: 'admin@uknf.test', 
-      name: 'Jan Kowalski', 
+      name: 'Jan Kowalski (Administrator UKNF)', 
       password, 
       role: UserRole.UKNF_ADMIN 
     }
@@ -57,7 +77,7 @@ async function main() {
   const employee1UKNF = await prisma.user.create({
     data: { 
       email: 'pracownik@uknf.test', 
-      name: 'Anna Nowak', 
+      name: 'Anna Nowak (Pracownik UKNF)', 
       password, 
       role: UserRole.UKNF_EMPLOYEE 
     }
@@ -66,7 +86,7 @@ async function main() {
   const employee2UKNF = await prisma.user.create({
     data: { 
       email: 'supervisor@uknf.test', 
-      name: 'Piotr Wiśniewski', 
+      name: 'Piotr Wiśniewski (Nadzór UKNF)', 
       password, 
       role: UserRole.UKNF_EMPLOYEE 
     }
@@ -75,7 +95,7 @@ async function main() {
   const employee3UKNF = await prisma.user.create({
     data: { 
       email: 'analyst@uknf.test', 
-      name: 'Katarzyna Lewandowska', 
+      name: 'Katarzyna Lewandowska (Analityk UKNF)', 
       password, 
       role: UserRole.UKNF_EMPLOYEE 
     }
@@ -309,7 +329,7 @@ async function main() {
   const bankAdmin = await prisma.user.create({
     data: { 
       email: 'admin@bank-przykladowy.test', 
-      name: 'Marek Dyrektor', 
+      name: 'Marek Dyrektor (Administrator - Bank Przykładowy)', 
       password, 
       role: UserRole.ENTITY_ADMIN 
     }
@@ -322,7 +342,7 @@ async function main() {
   const bankUser = await prisma.user.create({
     data: { 
       email: 'user@bank-przykladowy.test', 
-      name: 'Zofia Księgowa', 
+      name: 'Zofia Księgowa (Użytkownik - Bank Przykładowy)', 
       password, 
       role: UserRole.ENTITY_USER 
     }
@@ -336,7 +356,7 @@ async function main() {
   const pkoAdmin = await prisma.user.create({
     data: { 
       email: 'admin@pko.test', 
-      name: 'Robert Kowalczyk', 
+      name: 'Robert Kowalczyk (Administrator - PKO BP)', 
       password, 
       role: UserRole.ENTITY_ADMIN 
     }
@@ -350,7 +370,7 @@ async function main() {
   const mbankUser = await prisma.user.create({
     data: { 
       email: 'reporting@mbank.test', 
-      name: 'Agnieszka Raport', 
+      name: 'Agnieszka Raport (Użytkownik - mBank)', 
       password, 
       role: UserRole.ENTITY_USER 
     }
@@ -364,7 +384,7 @@ async function main() {
   const pzuAdmin = await prisma.user.create({
     data: { 
       email: 'admin@pzu.test', 
-      name: 'Tomasz Ubezpieczyciel', 
+      name: 'Tomasz Ubezpieczyciel (Administrator - PZU)', 
       password, 
       role: UserRole.ENTITY_ADMIN 
     }
@@ -1090,8 +1110,8 @@ category: 'Kontrole',
   console.log('   analyst@uknf.test / Passw0rd! (Analityk)')
   
   console.log('\n   🏦 PODMIOTY:')
-  console.log('   admin@bank-przykladowy.test / Passw0rd! (Bank Przykładowy - Admin)')
-  console.log('   user@bank-przykladowy.test / Passw0rd! (Bank Przykładowy - User)')
+  console.log('   admin@bank-przykladowy.test / Passw0rd! (Bank Przykładowy - Administrator Podmiotu)')
+  console.log('   user@bank-przykladowy.test / Passw0rd! (Bank Przykładowy - Pracownik Podmiotu)')
   console.log('   admin@pko.test / Passw0rd! (PKO BP - Admin)')
   console.log('   reporting@mbank.test / Passw0rd! (mBank - User)')
   console.log('   admin@pzu.test / Passw0rd! (PZU - Admin)')

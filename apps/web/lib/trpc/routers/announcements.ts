@@ -14,8 +14,8 @@ export const announcementsRouter = createTRPCRouter({
       const { prisma, session } = ctx
       const { limit, cursor } = input
 
-      const announcements = await prisma.announcement.findMany({
-        where: { isPublished: true },
+      const announcements = await prisma.bulletin.findMany({
+        where: { publishedAt: { not: null } },
         take: limit + 1,
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { publishedAt: 'desc' },
@@ -50,7 +50,7 @@ export const announcementsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
 
-      const announcement = await prisma.announcement.findUnique({
+      const announcement = await prisma.bulletin.findUnique({
         where: { id: input.id },
         include: {
           author: {
@@ -77,11 +77,10 @@ export const announcementsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
 
-      const announcement = await prisma.announcement.create({
+      const announcement = await prisma.bulletin.create({
         data: {
           title: input.title,
-          content: input.content,
-          isPublished: input.publish,
+          body: input.content,
           publishedAt: input.publish ? new Date() : null,
           authorId: session.user.id,
         },
@@ -95,10 +94,9 @@ export const announcementsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
 
-      const announcement = await prisma.announcement.update({
+      const announcement = await prisma.bulletin.update({
         where: { id: input.id },
         data: {
-          isPublished: true,
           publishedAt: new Date(),
         },
       })
@@ -111,15 +109,15 @@ export const announcementsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
 
-      const read = await prisma.announcementRead.upsert({
+      const read = await prisma.bulletinRead.upsert({
         where: {
-          announcementId_userId: {
-            announcementId: input.id,
+          bulletinId_userId: {
+            bulletinId: input.id,
             userId: session.user.id,
           },
         },
         create: {
-          announcementId: input.id,
+          bulletinId: input.id,
           userId: session.user.id,
         },
         update: {
@@ -133,9 +131,9 @@ export const announcementsRouter = createTRPCRouter({
   getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
     const { session, prisma } = ctx
 
-    const count = await prisma.announcement.count({
+    const count = await prisma.bulletin.count({
       where: {
-        isPublished: true,
+        publishedAt: { not: null },
         reads: {
           none: {
             userId: session.user.id,

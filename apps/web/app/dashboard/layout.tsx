@@ -20,7 +20,9 @@ export default async function DashboardLayout({
       <Header user={session.user} />
       <Sidebar userRole={session.user.role} />
       <main className="lg:pl-64">
-        <div className="bg-gray-50 min-h-[calc(100vh-64px)]">
+        {/* Make the inner dashboard area a fixed-height, scrollable container
+            so individual views scroll themselves instead of the whole page. */}
+        <div className="bg-gray-50 h-[calc(100vh-64px)] overflow-auto">
           {children}
         </div>
       </main>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable, type Column } from '@/components/data-table'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
+// SystemBreadcrumb removed; page uses heading instead
 
 interface UserPermission {
   id: string
@@ -70,7 +70,7 @@ export default function PermissionsPage() {
           UKNF_ADMIN: 'Administrator UKNF',
           UKNF_EMPLOYEE: 'Pracownik UKNF',
           ENTITY_ADMIN: 'Administrator podmiotu',
-          ENTITY_USER: 'Użytkownik podmiotu',
+          ENTITY_USER: 'Pracownik podmiotu',
         }
         return roleLabels[item.role as keyof typeof roleLabels] || item.role
       },
@@ -114,19 +114,9 @@ export default function PermissionsPage() {
     : mockData.filter(item => item.role === roleFilter)
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="UKNF" 
-        module="Zarządzanie uprawnieniami" 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Linia uprawnień', closeable: true },
-        ]}
-      />
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
+      {/* Breadcrumbs removed - TabNavigation in layout is used for tabs */}
 
       <div className="flex-1 px-6 py-6">
         <div className="bg-white rounded border border-gray-300">
@@ -149,7 +139,7 @@ export default function PermissionsPage() {
                 <option value="UKNF_ADMIN">Administrator UKNF</option>
                 <option value="UKNF_EMPLOYEE">Pracownik UKNF</option>
                 <option value="ENTITY_ADMIN">Administrator podmiotu</option>
-                <option value="ENTITY_USER">Użytkownik podmiotu</option>
+                <option value="ENTITY_USER">Pracownik podmiotu</option>
               </select>
             </div>
             

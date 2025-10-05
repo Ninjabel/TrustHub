@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { DataTable, type Column } from '@/components/data-table'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
-import { trpc } from '@/lib/trpc/client'
 
 interface AccessRequest {
   id: string
@@ -92,20 +90,8 @@ export default function AccessRequestsPage() {
     : mockData.filter(item => item.status === statusFilter)
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="UKNF" 
-        module="Panel administracyjny" 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Wnioski o dostęp', closeable: true },
-        ]}
-      />
-
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
       <div className="flex-1 px-6 py-6">
         <div className="bg-white rounded border border-gray-300">
           <div className="px-6 py-4 border-b border-gray-300">

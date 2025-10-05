@@ -13,6 +13,7 @@ declare module 'next-auth' {
     user: {
       id: string
       role: UserRole
+      isSystemAccount?: boolean
       memberships: OrganizationMembership[]
       currentOrgId?: string | null
     } & DefaultSession['user']
@@ -21,6 +22,7 @@ declare module 'next-auth' {
   interface User {
     id: string
     role: UserRole
+    isSystemAccount?: boolean
     memberships?: OrganizationMembership[]
     currentOrgId?: string | null
   }
@@ -30,6 +32,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: UserRole
+    isSystemAccount?: boolean
     memberships: OrganizationMembership[]
     currentOrgId?: string | null
   }

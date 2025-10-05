@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, staffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
-import { ReportStatus } from '@prisma/client'
+import { ReportStatus, UserRole } from '@prisma/client'
 
 export const reportsRouter = createTRPCRouter({
   list: protectedProcedure
@@ -18,9 +18,18 @@ export const reportsRouter = createTRPCRouter({
 
   const where: Record<string, unknown> = {}
       
-      // Entity users can only see their entity's reports
+      // Entity users can only see their organization's reports
       if (session.user.role === 'ENTITY_USER' || session.user.role === 'ENTITY_ADMIN') {
-        where.entityId = session.user.entityId
+        const userOrgIds = session.user.memberships.map(m => m.orgId)
+        
+        if (userOrgIds.length === 0) {
+          throw new TRPCError({ 
+            code: 'FORBIDDEN', 
+            message: 'No organization membership found' 
+          })
+        }
+        
+        where.organizationId = { in: userOrgIds }
       }
 
       if (status) {
@@ -36,8 +45,8 @@ export const reportsRouter = createTRPCRouter({
           user: {
             select: { id: true, name: true, email: true },
           },
-          entity: {
-            select: { id: true, name: true, code: true },
+          organization: {
+            select: { id: true, name: true, slug: true },
           },
         },
       })
@@ -65,8 +74,8 @@ export const reportsRouter = createTRPCRouter({
           user: {
             select: { id: true, name: true, email: true },
           },
-          entity: {
-            select: { id: true, name: true, code: true },
+          organization: {
+            select: { id: true, name: true, slug: true },
           },
         },
       })
@@ -77,8 +86,9 @@ export const reportsRouter = createTRPCRouter({
 
       // Check access
       if (
-        (session.user.role === 'ENTITY_USER' || session.user.role === 'ENTITY_ADMIN') &&
-        report.entityId !== session.user.entityId
+        (session.user.role === UserRole.ENTITY_USER || session.user.role === UserRole.ENTITY_ADMIN) &&
+        report.organizationId &&
+        !session.user.memberships.some(m => m.orgId === report.organizationId)
       ) {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }
@@ -99,12 +109,16 @@ export const reportsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { session, prisma } = ctx
 
+      // Get current organization ID
+      const organizationId = session.user.currentOrgId || 
+        (session.user.memberships.length > 0 ? session.user.memberships[0].orgId : null);
+
       const report = await prisma.report.create({
         data: {
           ...input,
           status: ReportStatus.DRAFT,
           userId: session.user.id,
-          entityId: session.user.entityId,
+          organizationId
         },
       })
 
@@ -170,8 +184,8 @@ export const reportsRouter = createTRPCRouter({
       // Check permissions
       if (
         report.userId !== session.user.id &&
-        session.user.role !== 'ADMIN' &&
-        session.user.role !== 'STAFF'
+        session.user.role !== UserRole.UKNF_ADMIN &&
+        session.user.role !== UserRole.UKNF_EMPLOYEE
       ) {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }

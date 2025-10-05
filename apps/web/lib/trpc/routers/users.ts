@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, adminProcedure, staffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
-import { UserRole } from '@prisma/client'
+import { UserRole, OrganizationRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 export const usersRouter = createTRPCRouter({
@@ -32,10 +32,6 @@ export const usersRouter = createTRPCRouter({
           name: true,
           email: true,
           role: true,
-          entityId: true,
-          entity: {
-            select: { id: true, name: true, code: true },
-          },
           createdAt: true,
           updatedAt: true,
         },
@@ -62,9 +58,12 @@ export const usersRouter = createTRPCRouter({
           name: true,
           email: true,
           role: true,
-          entityId: true,
-          entity: {
-            select: { id: true, name: true, code: true },
+          memberships: {
+            include: {
+              organization: {
+                select: { id: true, name: true, slug: true }
+              }
+            }
           },
           createdAt: true,
           updatedAt: true,
@@ -85,7 +84,7 @@ export const usersRouter = createTRPCRouter({
         email: z.string().email(),
         password: z.string().min(8),
         role: z.nativeEnum(UserRole),
-        entityId: z.string().optional(),
+        organizationId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -108,14 +107,19 @@ export const usersRouter = createTRPCRouter({
           email: input.email,
           password: hashedPassword,
           role: input.role,
-          entityId: input.entityId,
+          memberships: input.organizationId ? {
+            create: {
+              organizationId: input.organizationId,
+              role: OrganizationRole.USER
+            }
+          } : undefined
         },
         select: {
           id: true,
           name: true,
           email: true,
           role: true,
-          entityId: true,
+          memberships: true
         },
       })
 
@@ -167,7 +171,7 @@ export const usersRouter = createTRPCRouter({
           name: true,
           email: true,
           role: true,
-          entityId: true,
+          memberships: true,
         },
       })
 

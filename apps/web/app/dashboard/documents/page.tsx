@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable, type Column } from '@/components/data-table'
-import { Breadcrumbs, SystemBreadcrumb } from '@/components/breadcrumbs'
+// SystemBreadcrumb removed; page uses heading instead
 import { Upload, FileText, Send } from 'lucide-react'
 
 interface DocumentBatch {
@@ -103,7 +103,7 @@ export default function DocumentsPage() {
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (item) => (
+      render: (_item) => ( // eslint-disable-line @typescript-eslint/no-unused-vars
         <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
           Wysłano
         </span>
@@ -112,19 +112,9 @@ export default function DocumentsPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SystemBreadcrumb 
-        system="System" 
-        entity="UKNF" 
-        module="Wysyłka dokumentów" 
-      />
-      
-      <Breadcrumbs
-        items={[
-          { label: 'Pulpit użytkownika', href: '/dashboard' },
-          { label: 'Wysyłka dokumentów', closeable: true },
-        ]}
-      />
+    <div className="flex flex-col min-h-full">
+      {/* SystemBreadcrumb removed - heading below serves as context */}
+      {/* Breadcrumbs removed - TabNavigation in layout is used for tabs */}
 
       <div className="flex-1 px-6 py-6">
         <div className="bg-white rounded border border-gray-300">

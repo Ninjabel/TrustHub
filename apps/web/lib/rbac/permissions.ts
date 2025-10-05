@@ -60,6 +60,18 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'library:view',
     'entities:view',
   ],
+  UKNF_INSTITUTION: [
+    'reports:review',
+    'cases:handle',
+    'cases:view_all',
+    'messages:reply',
+    'messages:view_all',
+    'bulletin:publish',
+    'bulletin:view',
+    'library:manage',
+    'library:view',
+    'entities:view',
+  ],
   ENTITY_ADMIN: [
     'reports:submit',
     'cases:create',
@@ -81,6 +93,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   UKNF_ADMIN: 4,
   UKNF_EMPLOYEE: 3,
+  UKNF_INSTITUTION: 3,
   ENTITY_ADMIN: 2,
   ENTITY_USER: 1,
 }
